@@ -5,6 +5,11 @@ var Comment = React.createClass({
     return { __html: rawMarkup };
   },
 
+  deleteComment: function(e){
+    e.preventDefault
+    return this.props.deleteComment(this.props.id)
+  },
+
   render: function() {
     return (
       <div className="comment">
@@ -12,6 +17,7 @@ var Comment = React.createClass({
           {this.props.author}
         </h2>
         <span dangerouslySetInnerHTML={this.rawMarkup()} />
+        <button onClick={this.deleteComment}>Delete</button>
       </div>
     );
   }
@@ -21,11 +27,12 @@ var CommentList = React.createClass({
   render: function() {
     var commentNodes = this.props.data.map(function(comment) {
       return (
-        <Comment author={comment.author} key={comment.id}>
+        <Comment author={comment.author} key={comment.id} 
+         id={comment.id} deleteComment={this.props.deleteComment}>
           {comment.text}
         </Comment>
       );
-    });
+    }.bind(this));
     return (
       <div className="commentList">
         {commentNodes}
@@ -108,6 +115,23 @@ var CommentBox = React.createClass({
       }.bind(this)
     });
   },
+  handleCommentDelete: function(id) {
+    var comments = this.state.data;
+    $.ajax({
+      url: this.props.url,
+      dataType: 'json',
+      type: 'POST',
+      data: {"id" : id},
+      success: function (data) {
+        this.setState({data: data});
+      }.bind(this),
+      error: function(xhr, status, err) {
+        this.setState({data: comments});
+        console.error(this.props.url, status, err.toString());
+      }.bind(this)
+    });
+  },
+
   getInitialState: function() {
     return {data: []};
   },
@@ -119,7 +143,7 @@ var CommentBox = React.createClass({
     return (
       <div className="commentBox">
         <h1>Comments</h1>
-        <CommentList data={this.state.data} />
+        <CommentList data={this.state.data} deleteComment={this.handleCommentDelete} />
         <CommentForm onCommentSubmit={this.handleCommentSubmit} />
       </div>
     );
