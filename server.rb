@@ -24,17 +24,22 @@ server.mount_proc '/api/comments' do |req, res|
   comments = JSON.parse(File.read('./comments.json', encoding: 'UTF-8'))
 
   if req.request_method == 'POST'
+    unless req.query["author"].nil?
     # Assume it's well formed
-    comment = { id: (Time.now.to_f * 1000).to_i }
-    req.query.each do |key, value|
-      comment[key] = value.force_encoding('UTF-8') unless key == 'id'
+      comment = { id: (Time.now.to_f * 1000).to_i }
+      req.query.each do |key, value|
+        comment[key] = value.force_encoding('UTF-8') unless key == 'id'
+      end
+      comments << comment
+    else
+      comments = comments.map {|comment| comment if comment["id"].to_i != req.query["id"].to_i}.compact
     end
-    comments << comment
+
     File.write(
       './comments.json',
       JSON.pretty_generate(comments, indent: '    '),
       encoding: 'UTF-8'
-    )
+      )
   end
 
   # always return json
